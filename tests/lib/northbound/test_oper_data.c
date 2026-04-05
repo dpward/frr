@@ -244,20 +244,9 @@ static struct yang_data *__return_null(struct nb_cb_get_elem_args *args)
 /*
  * XPath: /frr-test-module:frr-test-module/c2cont/c2value
  */
-static enum nb_error frr_test_module_c2cont_c2value_get(const struct nb_node *nb_node,
-							const void *parent_list_entry,
-							struct lyd_node *parent)
+static struct yang_data *frr_test_module_c2cont_c2value_get_elem(struct nb_cb_get_elem_args *args)
 {
-	const struct lysc_node *snode = nb_node->snode;
-	uint32_t value = htole32(0xAB010203);
-	LY_ERR err;
-
-	/* Note that this api expects 'value' to be in little-endian form */
-	err = yang_new_term_bin(parent, snode->module, snode->name, &value, sizeof(value),
-				LYD_NEW_PATH_UPDATE, NULL);
-	assert(err == LY_SUCCESS);
-
-	return NB_OK;
+	return yang_data_new_uint32(args->xpath, 0xAB010203);
 }
 
 /*
@@ -348,7 +337,7 @@ const struct frr_yang_module_info frr_test_module_info = {
 		},
 		{
 			.xpath = "/frr-test-module:frr-test-module/c2cont/c2value",
-			.cbs.get = frr_test_module_c2cont_c2value_get,
+			.cbs.get_elem = frr_test_module_c2cont_c2value_get_elem,
 		},
 		{
 			.xpath = "/frr-test-module:frr-test-module/c3value",

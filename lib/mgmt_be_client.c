@@ -1237,10 +1237,9 @@ static enum nb_error clients_client_name_get(const struct nb_node *nb_node,
 /*
  * XPath: /frr-backend:clients/client/state/candidate-config-version
  */
-static enum nb_error clients_client_state_candidate_config_version_get(
-	const struct nb_node *nb_node, const void *parent_list_entry, struct lyd_node *parent)
+static struct yang_data *
+clients_client_state_candidate_config_version_get_elem(struct nb_cb_get_elem_args *args)
 {
-	const struct lysc_node *snode = nb_node->snode;
 	uint64_t value;
 
 	if (__be_client->config_txn)
@@ -1248,28 +1247,18 @@ static enum nb_error clients_client_state_candidate_config_version_get(
 	else
 		value = __be_client->running_config->version;
 
-	if (yang_new_term_bin(parent, snode->module, snode->name, &value, sizeof(value),
-			      LYD_NEW_PATH_UPDATE, NULL))
-		return NB_ERR_RESOURCE;
-
-	return NB_OK;
+	return yang_data_new_uint64(args->xpath, value);
 }
 
 /*
  * XPath: /frr-backend:clients/client/state/running-config-version
  */
-static enum nb_error clients_client_state_running_config_version_get(const struct nb_node *nb_node,
-								     const void *parent_list_entry,
-								     struct lyd_node *parent)
+static struct yang_data *
+clients_client_state_running_config_version_get_elem(struct nb_cb_get_elem_args *args)
 {
-	const struct lysc_node *snode = nb_node->snode;
 	uint64_t value = __be_client->running_config->version;
 
-	if (yang_new_term_bin(parent, snode->module, snode->name, &value, sizeof(value),
-			      LYD_NEW_PATH_UPDATE, NULL))
-		return NB_ERR_RESOURCE;
-
-	return NB_OK;
+	return yang_data_new_uint64(args->xpath, value);
 }
 
 /*
@@ -1314,13 +1303,13 @@ const struct frr_yang_module_info frr_backend_info = {
 		{
 			.xpath = "/frr-backend:clients/client/state/candidate-config-version",
 			.cbs = {
-				.get = clients_client_state_candidate_config_version_get,
+				.get_elem = clients_client_state_candidate_config_version_get_elem,
 			}
 		},
 		{
 			.xpath = "/frr-backend:clients/client/state/running-config-version",
 			.cbs = {
-				.get = clients_client_state_running_config_version_get,
+				.get_elem = clients_client_state_running_config_version_get_elem,
 			}
 		},
 		{
