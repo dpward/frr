@@ -2345,65 +2345,20 @@ enum nb_error nb_oper_iterate_legacy(const char *xpath,
 	return ret;
 }
 
-static const char *_adjust_ptr(struct lysc_node_leaf *lsnode, const char *valuep, size_t *size)
-{
-	switch (lsnode->type->basetype) {
-	case LY_TYPE_INT8:
-	case LY_TYPE_UINT8:
-#if BYTE_ORDER == BIG_ENDIAN
-		valuep += 7;
-#endif
-		*size = 1;
-		break;
-	case LY_TYPE_INT16:
-	case LY_TYPE_UINT16:
-#if BYTE_ORDER == BIG_ENDIAN
-		valuep += 6;
-#endif
-		*size = 2;
-		break;
-	case LY_TYPE_INT32:
-	case LY_TYPE_UINT32:
-#if BYTE_ORDER == BIG_ENDIAN
-		valuep += 4;
-#endif
-		*size = 4;
-		break;
-	case LY_TYPE_INT64:
-	case LY_TYPE_UINT64:
-		*size = 8;
-		break;
-	case LY_TYPE_UNKNOWN:
-	case LY_TYPE_BINARY:
-	case LY_TYPE_STRING:
-	case LY_TYPE_BITS:
-	case LY_TYPE_BOOL:
-	case LY_TYPE_DEC64:
-	case LY_TYPE_EMPTY:
-	case LY_TYPE_ENUM:
-	case LY_TYPE_IDENT:
-	case LY_TYPE_INST:
-	case LY_TYPE_LEAFREF:
-	case LY_TYPE_UNION:
-	default:
-		assert(0);
-	}
-	return valuep;
-}
-
 enum nb_error nb_oper_uint64_get(const struct nb_node *nb_node, const void *parent_list_entry,
 				 struct lyd_node *parent)
 {
 	struct lysc_node_leaf *lsnode = (struct lysc_node_leaf *)nb_node->snode;
 	struct lysc_node *snode = &lsnode->node;
 	ssize_t offset = (ssize_t)nb_node->cbs.get_elem;
-	uint64_t ubigval = *(uint64_t *)((char *)parent_list_entry + offset);
-	const char *valuep;
-	size_t size;
+	void *valuep = (char *)parent_list_entry + offset;
+	char value[21]; /* UINT64_MAX has 20 digits */
 
-	valuep = _adjust_ptr(lsnode, (const char *)&ubigval, &size);
-	if (yang_new_term_bin(parent, snode->module, snode->name, valuep, size,
-			      LYD_NEW_PATH_UPDATE, NULL))
+	if (lsnode->type->basetype != LY_TYPE_UINT64)
+		return NB_ERR_VALIDATION;
+
+	snprintf(value, sizeof(value), "%" PRIu64, *(uint64_t *)valuep);
+	if (lyd_new_term(parent, snode->module, snode->name, value, LYD_NEW_PATH_UPDATE, NULL))
 		return NB_ERR_RESOURCE;
 	return NB_OK;
 }
@@ -2415,13 +2370,14 @@ enum nb_error nb_oper_uint32_get(const struct nb_node *nb_node, const void *pare
 	struct lysc_node_leaf *lsnode = (struct lysc_node_leaf *)nb_node->snode;
 	struct lysc_node *snode = &lsnode->node;
 	ssize_t offset = (ssize_t)nb_node->cbs.get_elem;
-	uint64_t ubigval = *(uint64_t *)((char *)parent_list_entry + offset);
-	const char *valuep;
-	size_t size;
+	void *valuep = (char *)parent_list_entry + offset;
+	char value[11]; /* UINT32_MAX has 10 digits */
 
-	valuep = _adjust_ptr(lsnode, (const char *)&ubigval, &size);
-	if (yang_new_term_bin(parent, snode->module, snode->name, valuep, size,
-			      LYD_NEW_PATH_UPDATE, NULL))
+	if (lsnode->type->basetype != LY_TYPE_UINT32)
+		return NB_ERR_VALIDATION;
+
+	snprintf(value, sizeof(value), "%" PRIu32, *(uint32_t *)valuep);
+	if (lyd_new_term(parent, snode->module, snode->name, value, LYD_NEW_PATH_UPDATE, NULL))
 		return NB_ERR_RESOURCE;
 	return NB_OK;
 }
